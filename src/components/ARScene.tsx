@@ -2,6 +2,7 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
+import { toast } from "sonner";
 
 interface ARSceneProps {
   modelUrl: string;
@@ -10,10 +11,10 @@ interface ARSceneProps {
 }
 
 function Model({ url, scale, position }: { url: string; scale: number; position: { x: number; y: number; z: number } }) {
-  const gltf = useGLTF(url);
+  const { scene } = useGLTF(url);
   return (
     <primitive 
-      object={gltf.scene} 
+      object={scene} 
       scale={scale} 
       position={[position.x, position.y, position.z]}
     />
@@ -30,23 +31,21 @@ function Box() {
 }
 
 export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
-  const [mounted, setMounted] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Ensure WebGL is available
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    
-    if (!gl) {
-      console.error('WebGL not supported');
-      return;
-    }
-    
-    setMounted(true);
-    return () => setMounted(false);
+    // Small delay to ensure camera is initialized first
+    const timer = setTimeout(() => {
+      setReady(true);
+    }, 1000);
+
+    return () => {
+      clearTimeout(timer);
+      setReady(false);
+    };
   }, []);
 
-  if (!mounted) return null;
+  if (!ready) return null;
 
   return (
     <div style={{ 
@@ -62,8 +61,9 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
         gl={{ 
           alpha: true,
           antialias: true,
-          preserveDrawingBuffer: true,
-          powerPreference: "high-performance"
+          powerPreference: "default",
+          depth: true,
+          stencil: true
         }}
         style={{ 
           background: 'transparent',
@@ -79,8 +79,13 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
           near: 0.1,
           far: 1000
         }}
-        onCreated={({ gl }) => {
+        onCreated={({ gl, scene }) => {
           gl.setClearColor(0x000000, 0);
+          scene.background = null;
+        }}
+        onError={(error) => {
+          console.error('Canvas error:', error);
+          toast.error("Failed to initialize AR scene");
         }}
       >
         <Suspense fallback={null}>
