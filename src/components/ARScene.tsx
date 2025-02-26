@@ -2,7 +2,6 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Suspense } from "react";
-import * as THREE from "three";
 
 interface ARSceneProps {
   modelUrl: string;
@@ -13,35 +12,18 @@ interface ARSceneProps {
 function Box() {
   return (
     <mesh>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color="orange" />
+      <boxGeometry />
+      <meshNormalMaterial />
     </mesh>
   );
 }
 
 export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
   return (
-    <div style={{ width: "100vw", height: "100vh", position: "absolute" }}>
-      <Canvas
-        gl={{ 
-          antialias: true,
-          alpha: true,
-          preserveDrawingBuffer: true
-        }}
-        camera={{
-          fov: 75,
-          near: 0.1,
-          far: 1000,
-          position: [0, 0, 5]
-        }}
-        style={{ background: "black" }}
-      >
-        <Suspense fallback={null}>
-          <ambientLight intensity={0.5} />
-          <pointLight position={[10, 10, 10]} />
-          <Box />
-          <OrbitControls makeDefault />
-        </Suspense>
+    <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}>
+      <Canvas>
+        <Box />
+        <OrbitControls />
       </Canvas>
     </div>
   );
