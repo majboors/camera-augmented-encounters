@@ -1,5 +1,6 @@
 
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 interface CameraProps {
   isFrontCamera: boolean;
@@ -20,15 +21,20 @@ export const Camera = ({ isFrontCamera }: CameraProps) => {
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: isFrontCamera ? "user" : "environment",
+            width: { ideal: window.innerWidth },
+            height: { ideal: window.innerHeight }
           },
         });
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          await videoRef.current.play();
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play().catch(console.error);
+          };
         }
       } catch (error) {
         console.error("Error starting camera:", error);
+        toast.error("Failed to start camera");
       }
     };
 

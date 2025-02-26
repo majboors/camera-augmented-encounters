@@ -1,5 +1,5 @@
 
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import { toast } from "sonner";
@@ -31,22 +31,6 @@ function Box() {
 }
 
 export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    // Small delay to ensure camera is initialized first
-    const timer = setTimeout(() => {
-      setReady(true);
-    }, 1000);
-
-    return () => {
-      clearTimeout(timer);
-      setReady(false);
-    };
-  }, []);
-
-  if (!ready) return null;
-
   return (
     <div style={{ 
       width: "100vw", 
@@ -55,7 +39,8 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
       top: 0, 
       left: 0,
       zIndex: 2,
-      pointerEvents: "all"
+      pointerEvents: "auto",
+      touchAction: "none"
     }}>
       <Canvas
         gl={{ 
@@ -63,7 +48,8 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
           antialias: true,
           powerPreference: "default",
           depth: true,
-          stencil: true
+          stencil: true,
+          logarithmicDepthBuffer: true
         }}
         style={{ 
           background: 'transparent',
@@ -79,9 +65,8 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
           near: 0.1,
           far: 1000
         }}
-        onCreated={({ gl, scene }) => {
+        onCreated={({ gl }) => {
           gl.setClearColor(0x000000, 0);
-          scene.background = null;
         }}
         onError={(error) => {
           console.error('Canvas error:', error);
