@@ -9,9 +9,15 @@ export const Camera = ({ isFrontCamera }: CameraProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
+    let stream: MediaStream | null = null;
+
     const startCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: isFrontCamera ? "user" : "environment",
           },
@@ -19,7 +25,7 @@ export const Camera = ({ isFrontCamera }: CameraProps) => {
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          await videoRef.current.play().catch(console.error);
+          await videoRef.current.play();
         }
       } catch (error) {
         console.error("Error starting camera:", error);
@@ -29,9 +35,8 @@ export const Camera = ({ isFrontCamera }: CameraProps) => {
     startCamera();
 
     return () => {
-      if (videoRef.current?.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-        tracks.forEach(track => track.stop());
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
       }
     };
   }, [isFrontCamera]);
@@ -42,8 +47,15 @@ export const Camera = ({ isFrontCamera }: CameraProps) => {
       autoPlay
       playsInline
       muted
-      className="h-full w-full object-cover"
-      style={{ position: 'fixed', top: 0, left: 0, zIndex: 0 }}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        zIndex: 1
+      }}
     />
   );
 };

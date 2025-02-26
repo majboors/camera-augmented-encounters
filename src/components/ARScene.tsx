@@ -45,18 +45,22 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
       height: "100vh", 
       position: "fixed", 
       top: 0, 
-      left: 0, 
-      pointerEvents: "none",
-      zIndex: 10
+      left: 0,
+      zIndex: 2
     }}>
       <Canvas
-        gl={{ alpha: true }}
+        gl={{ 
+          alpha: true,
+          antialias: true,
+          preserveDrawingBuffer: true
+        }}
         style={{ 
-          background: "transparent",
-          pointerEvents: "auto",
-          position: "absolute",
+          background: 'transparent',
+          position: 'absolute',
           top: 0,
-          left: 0
+          left: 0,
+          width: '100%',
+          height: '100%'
         }}
         camera={{
           position: [0, 2, 5],
