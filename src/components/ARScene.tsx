@@ -1,6 +1,7 @@
 
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, Loader } from "@react-three/drei";
+import { Suspense } from "react";
 
 interface ARSceneProps {
   modelUrl: string;
@@ -10,14 +11,14 @@ interface ARSceneProps {
 
 function Scene() {
   return (
-    <>
+    <Suspense fallback={null}>
       <ambientLight intensity={0.5} />
       <directionalLight position={[10, 10, 5]} intensity={1} />
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshPhongMaterial color="royalblue" opacity={0.8} transparent={true} />
+      <mesh position={[0, 0, 0]} scale={[1, 1, 1]}>
+        <boxGeometry />
+        <meshStandardMaterial color="royalblue" opacity={0.8} transparent />
       </mesh>
-    </>
+    </Suspense>
   );
 }
 
@@ -32,11 +33,18 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
             alpha: true,
             antialias: true,
             preserveDrawingBuffer: true,
+            powerPreference: "high-performance"
           }}
         >
           <Scene />
-          <OrbitControls enableZoom={true} enablePan={true} enableRotate={true} />
+          <OrbitControls 
+            enableZoom={true} 
+            enablePan={true} 
+            enableRotate={true}
+            makeDefault
+          />
         </Canvas>
+        <Loader />
       </div>
     </div>
   );
