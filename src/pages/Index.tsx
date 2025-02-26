@@ -53,7 +53,7 @@ const Index = () => {
     <div className="relative h-screen w-full overflow-hidden bg-black">
       <Camera isFrontCamera={isFrontCamera} />
       <ARScene
-        modelUrl="https://replicate.delivery/yhqm/5xOmxKPXDTpnIdxRRvs91WKWHTYNGmdBjuE7DbBEigZf0WCKA/output.glb"
+        modelUrl="https://market-assets.fra1.cdn.digitaloceanspaces.com/market-assets/models/dog/model.gltf"
         scale={modelScale}
         position={modelPosition}
       />
