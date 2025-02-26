@@ -1,12 +1,23 @@
 
 import React, { Suspense, useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, useGLTF } from "@react-three/drei";
 
 interface ARSceneProps {
   modelUrl: string;
   scale: number;
   position: { x: number; y: number; z: number };
+}
+
+function Model({ url, scale, position }: { url: string; scale: number; position: { x: number; y: number; z: number } }) {
+  const gltf = useGLTF(url);
+  return (
+    <primitive 
+      object={gltf.scene} 
+      scale={scale} 
+      position={[position.x, position.y, position.z]}
+    />
+  );
 }
 
 function Box() {
@@ -36,9 +47,10 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
       top: 0, 
       left: 0, 
       pointerEvents: "none",
-      zIndex: 10 // Increased z-index to appear above camera
+      zIndex: 10
     }}>
       <Canvas
+        gl={{ alpha: true }}
         style={{ 
           background: "transparent",
           pointerEvents: "auto",
@@ -47,15 +59,26 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
           left: 0
         }}
         camera={{
-          position: [0, 0, 5],
-          fov: 75
+          position: [0, 2, 5],
+          fov: 75,
+          near: 0.1,
+          far: 1000
         }}
       >
         <Suspense fallback={null}>
           <ambientLight intensity={0.5} />
           <directionalLight position={[0, 5, 5]} intensity={1} />
-          <Box />
-          <OrbitControls makeDefault />
+          {modelUrl ? (
+            <Model url={modelUrl} scale={scale} position={position} />
+          ) : (
+            <Box />
+          )}
+          <OrbitControls 
+            makeDefault
+            enableDamping={false}
+            enableZoom={true}
+            enablePan={true}
+          />
         </Suspense>
       </Canvas>
     </div>
