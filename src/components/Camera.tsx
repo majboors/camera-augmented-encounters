@@ -19,6 +19,7 @@ export const Camera = ({ isFrontCamera }: CameraProps) => {
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          await videoRef.current.play().catch(console.error);
         }
       } catch (error) {
         console.error("Error starting camera:", error);
@@ -40,6 +41,7 @@ export const Camera = ({ isFrontCamera }: CameraProps) => {
       ref={videoRef}
       autoPlay
       playsInline
+      muted
       className="h-full w-full object-cover"
       style={{ position: 'fixed', top: 0, left: 0, zIndex: 0 }}
     />
