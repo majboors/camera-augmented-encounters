@@ -4,7 +4,8 @@ import { Camera } from "@/components/Camera";
 import { ARScene } from "@/components/ARScene";
 import { CameraControls } from "@/components/CameraControls";
 import { ModelControls } from "@/components/ModelControls";
-import { PermissionRequest } from "@/components/PermissionRequest";
+import { Button } from "@/components/ui/button";
+import { Camera as CameraIcon } from "lucide-react";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -26,20 +27,26 @@ const Index = () => {
     }
   };
 
-  useEffect(() => {
-    requestPermission();
-  }, []);
-
-  if (hasPermission === null) {
+  if (hasPermission === null || hasPermission === false) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="animate-pulse text-white">Loading...</div>
+      <div className="flex min-h-screen flex-col items-center justify-center space-y-6 bg-black p-4 text-center">
+        <div className="rounded-full bg-white/10 p-4">
+          <CameraIcon className="h-8 w-8 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-white">Welcome to AR Camera</h2>
+        <p className="max-w-md text-gray-400">
+          This app needs access to your camera to enable the AR experience. Your camera
+          feed will only be used within this application.
+        </p>
+        <Button
+          onClick={requestPermission}
+          className="mt-4 bg-white text-black hover:bg-white/90"
+          size="lg"
+        >
+          Start AR Experience
+        </Button>
       </div>
     );
-  }
-
-  if (hasPermission === false) {
-    return <PermissionRequest onRequestPermission={requestPermission} />;
   }
 
   return (
