@@ -33,6 +33,15 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Ensure WebGL is available
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    
+    if (!gl) {
+      console.error('WebGL not supported');
+      return;
+    }
+    
     setMounted(true);
     return () => setMounted(false);
   }, []);
@@ -46,13 +55,15 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
       position: "fixed", 
       top: 0, 
       left: 0,
-      zIndex: 2
+      zIndex: 2,
+      pointerEvents: "all"
     }}>
       <Canvas
         gl={{ 
           alpha: true,
           antialias: true,
-          preserveDrawingBuffer: true
+          preserveDrawingBuffer: true,
+          powerPreference: "high-performance"
         }}
         style={{ 
           background: 'transparent',
@@ -67,6 +78,9 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
           fov: 75,
           near: 0.1,
           far: 1000
+        }}
+        onCreated={({ gl }) => {
+          gl.setClearColor(0x000000, 0);
         }}
       >
         <Suspense fallback={null}>
