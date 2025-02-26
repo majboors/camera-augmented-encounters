@@ -13,7 +13,7 @@ function Box() {
   return (
     <mesh position={[0, 0, 0]} scale={[1, 1, 1]}>
       <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color="royalblue" />
+      <meshStandardMaterial color="royalblue" transparent opacity={0.8} />
     </mesh>
   );
 }
@@ -35,13 +35,16 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
       position: "fixed", 
       top: 0, 
       left: 0, 
-      pointerEvents: "none", 
-      zIndex: 1 
+      pointerEvents: "none",
+      zIndex: 10 // Increased z-index to appear above camera
     }}>
       <Canvas
         style={{ 
           background: "transparent",
-          pointerEvents: "auto" 
+          pointerEvents: "auto",
+          position: "absolute",
+          top: 0,
+          left: 0
         }}
         camera={{
           position: [0, 0, 5],
