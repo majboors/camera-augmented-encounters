@@ -50,7 +50,7 @@ const Index = () => {
   }
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-black">
+    <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       <Camera isFrontCamera={isFrontCamera} />
       <ARScene
         modelUrl="https://market-assets.fra1.cdn.digitaloceanspaces.com/market-assets/models/dog/model.gltf"
