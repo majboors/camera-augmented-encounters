@@ -23,7 +23,7 @@ function Scene() {
 
 export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
   return (
-    <div style={{ width: "100vw", height: "100vh", position: "fixed", top: 0, left: 0, pointerEvents: "none" }}>
+    <div style={{ width: "100vw", height: "100vh", position: "fixed", top: 0, left: 0, pointerEvents: "none", zIndex: 1 }}>
       <div style={{ width: "100%", height: "100%", pointerEvents: "auto" }}>
         <Canvas
           camera={{ position: [0, 0, 5], fov: 75 }}

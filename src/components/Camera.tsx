@@ -41,6 +41,7 @@ export const Camera = ({ isFrontCamera }: CameraProps) => {
       autoPlay
       playsInline
       className="h-full w-full object-cover"
+      style={{ position: 'fixed', top: 0, left: 0, zIndex: 0 }}
     />
   );
 };
