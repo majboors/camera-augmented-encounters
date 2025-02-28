@@ -15,7 +15,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   onPlaceModel,
 }) => {
   return (
-    <Card className="bg-black/60 p-4 backdrop-blur-lg text-white absolute top-4 right-4 w-auto max-w-[200px]">
+    <Card className="bg-black/80 p-4 backdrop-blur-lg text-white absolute top-4 right-4 w-auto max-w-[200px] border border-white/20">
       <h2 className="text-lg font-bold mb-2">Place 3D Model</h2>
       
       <div className="mb-3">
@@ -25,7 +25,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       </div>
       
       <Button 
-        className="w-full" 
+        className="w-full bg-white text-black hover:bg-gray-200" 
         onClick={onPlaceModel}
       >
         Put
