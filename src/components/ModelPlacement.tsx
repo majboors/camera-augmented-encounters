@@ -26,7 +26,8 @@ export const ModelPlacement: React.FC<ModelPlacementProps> = ({ onPlaceModel }) 
   const [isPlacing, setIsPlacing] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{latitude: number, longitude: number} | null>(null);
   const [scale, setScale] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
+  const [position, setPosition] = useState({ x: 0, y: 0, z: -3 }); // Start with model in front of user
+  const [trajectory, setTrajectory] = useState({ x: 0, y: 0, z: -3 });
 
   useEffect(() => {
     // Get user's location
@@ -48,11 +49,39 @@ export const ModelPlacement: React.FC<ModelPlacementProps> = ({ onPlaceModel }) 
     } else {
       toast.error("Geolocation is not supported by your browser");
     }
+
+    // Set up device orientation tracking for trajectory adjustment
+    if (window.DeviceOrientationEvent) {
+      window.addEventListener('deviceorientation', handleOrientation);
+    }
+
+    return () => {
+      if (window.DeviceOrientationEvent) {
+        window.removeEventListener('deviceorientation', handleOrientation);
+      }
+    };
   }, []);
+
+  const handleOrientation = (event: DeviceOrientationEvent) => {
+    if (isPlacing && event.beta && event.gamma) {
+      // Convert device orientation to trajectory position
+      // This is a simple mapping - beta controls y axis, gamma controls x axis
+      const betaNormalized = (event.beta - 45) / 90; // Normalize beta to a -0.5 to 0.5 range
+      const gammaNormalized = event.gamma / 90; // Normalize gamma to a -1 to 1 range
+      
+      // Update trajectory position based on device orientation
+      setTrajectory({
+        x: gammaNormalized * 3, // Scale for reasonable movement range
+        y: betaNormalized * 2,  // Scale for reasonable movement range
+        z: -3 + (Math.abs(betaNormalized) + Math.abs(gammaNormalized)), // Adjust depth based on tilt
+      });
+    }
+  };
 
   const handleSelectModel = (modelUrl: string) => {
     setSelectedModel(modelUrl);
     setIsPlacing(true);
+    toast.info("Move your device to adjust the trajectory, then place the model");
   };
 
   const handlePlaceModel = () => {
@@ -61,18 +90,23 @@ export const ModelPlacement: React.FC<ModelPlacementProps> = ({ onPlaceModel }) 
       return;
     }
 
+    // Use the trajectory position for final placement
     const modelData: PlacedModelData = {
       modelUrl: selectedModel,
       latitude: currentLocation.latitude,
       longitude: currentLocation.longitude,
       scale: scale,
-      position: position
+      position: trajectory
     };
 
     onPlaceModel(modelData);
     toast.success("Model placed successfully!");
     setIsPlacing(false);
     setSelectedModel(null);
+    
+    // Reset trajectory and position
+    setTrajectory({ x: 0, y: 0, z: -3 });
+    setPosition({ x: 0, y: 0, z: -3 });
   };
 
   return (
@@ -82,8 +116,8 @@ export const ModelPlacement: React.FC<ModelPlacementProps> = ({ onPlaceModel }) 
           <ModelControls 
             scale={scale}
             onScaleChange={setScale}
-            position={position}
-            onPositionChange={setPosition}
+            position={trajectory}
+            onPositionChange={setTrajectory}
           />
           <div className="flex gap-2 justify-end">
             <Button 

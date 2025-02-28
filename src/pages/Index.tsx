@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Camera } from "@/components/Camera";
 import { ARScene } from "@/components/ARScene";
 import { CameraControls } from "@/components/CameraControls";
-import { ModelControls } from "@/components/ModelControls";
+import { ModelPlacement, PlacedModelData } from "@/components/ModelPlacement";
 import { Button } from "@/components/ui/button";
 import { Camera as CameraIcon, Bug } from "lucide-react";
 import { toast } from "sonner";
@@ -13,7 +13,10 @@ const Index = () => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isFrontCamera, setIsFrontCamera] = useState(false);
   const [modelScale, setModelScale] = useState(1);
-  const [modelPosition, setModelPosition] = useState({ x: 0, y: 0, z: 0 });
+  const [modelPosition, setModelPosition] = useState({ x: 0, y: 0, z: -3 });
+  const [modelUrl, setModelUrl] = useState("https://replicate.delivery/yhqm/5xOmxKPXDTpnIdxRRvs91WKWHTYNGmdBjuE7DbBEigZf0WCKA/output.glb");
+  const [showTrajectory, setShowTrajectory] = useState(false);
+  const [placedModels, setPlacedModels] = useState<PlacedModelData[]>([]);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
   const addDebugInfo = (message: string) => {
@@ -64,6 +67,25 @@ const Index = () => {
     }
   };
 
+  const handlePlaceModel = (modelData: PlacedModelData) => {
+    setPlacedModels(prev => [...prev, modelData]);
+    addDebugInfo(`Placed model at ${modelData.latitude.toFixed(6)}, ${modelData.longitude.toFixed(6)}`);
+    
+    // Update current model position and URL to match the placed model
+    setModelPosition(modelData.position);
+    setModelUrl(modelData.modelUrl);
+    setModelScale(modelData.scale);
+    
+    // Show trajectory briefly after placement for feedback
+    setShowTrajectory(true);
+    setTimeout(() => {
+      setShowTrajectory(false);
+    }, 3000);
+    
+    // Here you would typically send this data to a server so other users can see it
+    toast.success("Model placed! In a real application, this would be visible to other users nearby.");
+  };
+
   if (hasPermission === null || hasPermission === false) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center space-y-6 bg-black p-4 text-center">
@@ -90,7 +112,7 @@ const Index = () => {
     <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       <Camera isFrontCamera={isFrontCamera} />
       <ARScene
-        modelUrl="https://replicate.delivery/yhqm/5xOmxKPXDTpnIdxRRvs91WKWHTYNGmdBjuE7DbBEigZf0WCKA/output.glb"
+        modelUrl={modelUrl}
         scale={modelScale}
         position={modelPosition}
       />
@@ -100,14 +122,9 @@ const Index = () => {
           onFlipCamera={() => setIsFrontCamera(!isFrontCamera)}
         />
       </div>
-      <div className="absolute right-4 top-4">
-        <ModelControls
-          scale={modelScale}
-          onScaleChange={setModelScale}
-          position={modelPosition}
-          onPositionChange={setModelPosition}
-        />
-      </div>
+      
+      <ModelPlacement onPlaceModel={handlePlaceModel} />
+      
       <div className="absolute top-4 left-4 flex gap-2">
         <Link to="/testing">
           <Button variant="outline" size="sm">
@@ -118,7 +135,7 @@ const Index = () => {
       </div>
       
       {/* Debug panel */}
-      <div className="absolute bottom-24 left-0 w-full px-4">
+      <div className="absolute bottom-32 left-0 w-full px-4">
         <details className="bg-black/70 text-white text-xs rounded p-2 max-h-28 overflow-y-auto">
           <summary className="cursor-pointer">Debug Info ({debugInfo.length})</summary>
           {debugInfo.map((info, i) => (

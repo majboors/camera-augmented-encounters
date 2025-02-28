@@ -4,26 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 
-// Sample 3D models - these URLs should point to actual GLTF models
+// Single model for now, as requested
 const AVAILABLE_MODELS = [
   { 
-    id: "cube", 
-    name: "Cube", 
-    url: "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/models/gltf/Cube/Cube.gltf",
-    thumbnail: "https://via.placeholder.com/100?text=Cube"
-  },
-  { 
-    id: "duck", 
-    name: "Duck", 
-    url: "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/models/gltf/Duck/Duck.gltf",
-    thumbnail: "https://via.placeholder.com/100?text=Duck"
-  },
-  { 
-    id: "flamingo", 
-    name: "Flamingo", 
-    url: "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/models/gltf/Flamingo/Flamingo.gltf",
-    thumbnail: "https://via.placeholder.com/100?text=Flamingo"
-  },
+    id: "custom", 
+    name: "3D Object", 
+    url: "https://replicate.delivery/yhqm/5xOmxKPXDTpnIdxRRvs91WKWHTYNGmdBjuE7DbBEigZf0WCKA/output.glb",
+    thumbnail: "https://via.placeholder.com/100?text=3D+Object"
+  }
 ];
 
 interface ModelSelectorProps {
@@ -39,9 +27,9 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 }) => {
   return (
     <Card className="bg-black/60 p-4 backdrop-blur-lg text-white w-full max-w-md mx-auto">
-      <h2 className="text-xl font-bold mb-4">Select a 3D Model</h2>
+      <h2 className="text-xl font-bold mb-4">Place 3D Model in AR</h2>
       
-      <div className="grid grid-cols-3 gap-2 mb-4">
+      <div className="grid grid-cols-1 gap-2 mb-4">
         {AVAILABLE_MODELS.map((model) => (
           <div 
             key={model.id}
@@ -49,18 +37,21 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
               onSelectModel(model.url);
               toast.success(`Selected ${model.name}`);
             }}
-            className={`cursor-pointer p-2 rounded-lg transition-all ${
+            className={`cursor-pointer p-3 rounded-lg transition-all flex items-center ${
               selectedModel === model.url ? 'bg-primary/80 ring-2 ring-primary' : 'bg-black/40 hover:bg-black/60'
             }`}
           >
-            <div className="aspect-square overflow-hidden rounded-md bg-black/20 mb-1">
+            <div className="aspect-square w-16 h-16 overflow-hidden rounded-md bg-black/20 mr-3">
               <img 
                 src={model.thumbnail} 
                 alt={model.name}
                 className="object-cover w-full h-full"
               />
             </div>
-            <p className="text-xs text-center">{model.name}</p>
+            <div>
+              <p className="font-medium">{model.name}</p>
+              <p className="text-xs text-gray-300">Tap to select, then position using trajectory line</p>
+            </div>
           </div>
         ))}
       </div>
@@ -70,11 +61,11 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         onClick={onPlaceModel}
         disabled={!selectedModel}
       >
-        Place Model Here
+        Place Model At Trajectory Point
       </Button>
       
       <p className="text-xs text-center mt-2 text-gray-300">
-        This will place the model at your current location for others to see
+        Move your device to adjust the placement trajectory
       </p>
     </Card>
   );
