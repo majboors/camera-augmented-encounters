@@ -55,14 +55,14 @@ function ErrorBoundary({ children }: { children: React.ReactNode }) {
 }
 
 function Model({ url }: { url: string }) {
-  const [error, setError] = useState<Error | null>(null);
+  const [hasError, setHasError] = useState(false);
   
   try {
     // Using draco decoder may cause issues, so explicitly disable it
     const { scene } = useGLTF(url, undefined, undefined, 
       (e) => {
         console.error("GLB loading error:", e);
-        setError(e);
+        setHasError(true);
         toast.error("Failed to load 3D model");
       }
     );
@@ -85,7 +85,9 @@ function Model({ url }: { url: string }) {
       }
     }, [scene]);
     
-    if (error) throw error;
+    if (hasError) {
+      return <Fallback />;
+    }
     
     return scene ? (
       <primitive 
