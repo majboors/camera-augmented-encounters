@@ -104,7 +104,7 @@ export const ModelPlacement: React.FC<ModelPlacementProps> = ({ onPlaceModel }) 
   };
 
   return (
-    <div className="fixed bottom-4 left-0 right-0 z-10 px-4">
+    <div className="fixed z-10">
       <ModelSelector onPlaceModel={handlePlaceModel} />
     </div>
   );
