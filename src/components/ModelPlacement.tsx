@@ -21,9 +21,11 @@ export interface PlacedModelData {
   };
 }
 
+// Set the model URL directly
+const MODEL_URL = "https://replicate.delivery/yhqm/5xOmxKPXDTpnIdxRRvs91WKWHTYNGmdBjuE7DbBEigZf0WCKA/output.glb";
+
 export const ModelPlacement: React.FC<ModelPlacementProps> = ({ onPlaceModel }) => {
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
-  const [isPlacing, setIsPlacing] = useState(false);
+  const [isPlacing, setIsPlacing] = useState(true); // Start in placing mode
   const [currentLocation, setCurrentLocation] = useState<{latitude: number, longitude: number} | null>(null);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0, z: -3 }); // Start with model in front of user
@@ -78,21 +80,15 @@ export const ModelPlacement: React.FC<ModelPlacementProps> = ({ onPlaceModel }) 
     }
   };
 
-  const handleSelectModel = (modelUrl: string) => {
-    setSelectedModel(modelUrl);
-    setIsPlacing(true);
-    toast.info("Move your device to adjust the trajectory, then place the model");
-  };
-
   const handlePlaceModel = () => {
-    if (!selectedModel || !currentLocation) {
-      toast.error("Cannot place model: missing model or location data");
+    if (!currentLocation) {
+      toast.error("Cannot place model: missing location data");
       return;
     }
 
     // Use the trajectory position for final placement
     const modelData: PlacedModelData = {
-      modelUrl: selectedModel,
+      modelUrl: MODEL_URL,
       latitude: currentLocation.latitude,
       longitude: currentLocation.longitude,
       scale: scale,
@@ -101,8 +97,6 @@ export const ModelPlacement: React.FC<ModelPlacementProps> = ({ onPlaceModel }) 
 
     onPlaceModel(modelData);
     toast.success("Model placed successfully!");
-    setIsPlacing(false);
-    setSelectedModel(null);
     
     // Reset trajectory and position
     setTrajectory({ x: 0, y: 0, z: -3 });
@@ -111,36 +105,7 @@ export const ModelPlacement: React.FC<ModelPlacementProps> = ({ onPlaceModel }) 
 
   return (
     <div className="fixed bottom-4 left-0 right-0 z-10 px-4">
-      {isPlacing ? (
-        <div className="flex flex-col space-y-4">
-          <ModelControls 
-            scale={scale}
-            onScaleChange={setScale}
-            position={trajectory}
-            onPositionChange={setTrajectory}
-          />
-          <div className="flex gap-2 justify-end">
-            <Button 
-              onClick={() => setIsPlacing(false)} 
-              variant="outline" 
-              className="bg-black/50 text-white border-white/50 hover:bg-black/80"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handlePlaceModel}
-            >
-              Confirm Placement
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <ModelSelector 
-          onSelectModel={handleSelectModel}
-          onPlaceModel={() => setIsPlacing(true)}
-          selectedModel={selectedModel}
-        />
-      )}
+      <ModelSelector onPlaceModel={handlePlaceModel} />
     </div>
   );
 };
