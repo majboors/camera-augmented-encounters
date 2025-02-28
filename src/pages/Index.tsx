@@ -5,23 +5,58 @@ import { ARScene } from "@/components/ARScene";
 import { CameraControls } from "@/components/CameraControls";
 import { ModelControls } from "@/components/ModelControls";
 import { Button } from "@/components/ui/button";
-import { Camera as CameraIcon } from "lucide-react";
+import { Camera as CameraIcon, Bug } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isFrontCamera, setIsFrontCamera] = useState(false);
   const [modelScale, setModelScale] = useState(1);
   const [modelPosition, setModelPosition] = useState({ x: 0, y: 0, z: 0 });
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
+
+  const addDebugInfo = (message: string) => {
+    console.log(message);
+    setDebugInfo(prev => [...prev, `${new Date().toISOString().slice(11, 19)}: ${message}`]);
+  };
+
+  useEffect(() => {
+    // Debug browser info
+    addDebugInfo(`Browser: ${navigator.userAgent}`);
+    addDebugInfo(`Screen: ${window.innerWidth}x${window.innerHeight}`);
+    
+    // Check WebGL capabilities
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) {
+        addDebugInfo('WebGL not supported');
+      } else {
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        if (debugInfo) {
+          const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+          const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+          addDebugInfo(`WebGL Vendor: ${vendor}`);
+          addDebugInfo(`WebGL Renderer: ${renderer}`);
+        }
+      }
+    } catch (e) {
+      addDebugInfo(`WebGL check error: ${e}`);
+    }
+  }, []);
 
   const requestPermission = async () => {
     try {
+      addDebugInfo('Requesting camera permission...');
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       stream.getTracks().forEach(track => track.stop());
       setHasPermission(true);
+      addDebugInfo('Camera permission granted');
       toast.success("Camera access granted!");
     } catch (error) {
       console.error("Error accessing camera:", error);
+      addDebugInfo(`Camera permission error: ${error}`);
       setHasPermission(false);
       toast.error("Camera access denied. Please enable camera permissions.");
     }
@@ -53,7 +88,7 @@ const Index = () => {
     <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       <Camera isFrontCamera={isFrontCamera} />
       <ARScene
-        modelUrl="https://market-assets.fra1.cdn.digitaloceanspaces.com/market-assets/models/dog/model.gltf"
+        modelUrl="https://replicate.delivery/yhqm/5xOmxKPXDTpnIdxRRvs91WKWHTYNGmdBjuE7DbBEigZf0WCKA/output.glb"
         scale={modelScale}
         position={modelPosition}
       />
@@ -70,6 +105,24 @@ const Index = () => {
           position={modelPosition}
           onPositionChange={setModelPosition}
         />
+      </div>
+      <div className="absolute top-4 left-4 flex gap-2">
+        <Link to="/testing">
+          <Button variant="outline" size="sm">
+            <Bug className="mr-2 h-4 w-4" />
+            Test Model
+          </Button>
+        </Link>
+      </div>
+      
+      {/* Debug panel */}
+      <div className="absolute bottom-24 left-0 w-full px-4">
+        <details className="bg-black/70 text-white text-xs rounded p-2 max-h-28 overflow-y-auto">
+          <summary className="cursor-pointer">Debug Info ({debugInfo.length})</summary>
+          {debugInfo.map((info, i) => (
+            <div key={i} className="whitespace-nowrap">{info}</div>
+          ))}
+        </details>
       </div>
     </div>
   );
