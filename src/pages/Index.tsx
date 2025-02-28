@@ -33,10 +33,12 @@ const Index = () => {
       if (!gl) {
         addDebugInfo('WebGL not supported');
       } else {
-        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        // Type assertion to WebGLRenderingContext
+        const webGL = gl as WebGLRenderingContext;
+        const debugInfo = webGL.getExtension('WEBGL_debug_renderer_info');
         if (debugInfo) {
-          const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
-          const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+          const vendor = webGL.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+          const renderer = webGL.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
           addDebugInfo(`WebGL Vendor: ${vendor}`);
           addDebugInfo(`WebGL Renderer: ${renderer}`);
         }
