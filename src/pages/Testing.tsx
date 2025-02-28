@@ -4,9 +4,10 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Camera } from "@/components/Camera";
+import { ModelPlacement, PlacedModelData } from "@/components/ModelPlacement";
 
 // Basic AR.js viewer component that uses string literals to render HTML
-const ARJSViewer = () => {
+const ARJSViewer = ({ placedModels }: { placedModels: PlacedModelData[] }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +25,7 @@ const ARJSViewer = () => {
     const handleModelLoaded = () => {
       console.log("Model loaded successfully");
       setModelLoaded(true);
-      toast.success("3D model loaded successfully!");
+      toast.success("3D models loaded successfully!");
     };
 
     window.addEventListener('model-loaded', handleModelLoaded);
@@ -55,6 +56,25 @@ const ARJSViewer = () => {
       }
     };
   }, [modelLoaded]);
+
+  // Generate dynamic A-Frame entities for placed models
+  const generateModelEntities = () => {
+    if (!placedModels || placedModels.length === 0) return '';
+    
+    return placedModels.map((model, index) => {
+      return `
+        <a-entity
+          id="placed-model-${index}"
+          gltf-model="${model.modelUrl}"
+          scale="${model.scale} ${model.scale} ${model.scale}"
+          position="${model.position.x} ${model.position.y} ${model.position.z}"
+          rotation="0 0 0"
+          animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear"
+          gps-entity-place="latitude: ${model.latitude}; longitude: ${model.longitude};"
+        ></a-entity>
+      `;
+    }).join('');
+  };
   
   return (
     <div ref={containerRef} className="w-full h-full relative">
@@ -100,6 +120,9 @@ const ARJSViewer = () => {
               transparent="true"
               opacity="0.7"
             ></a-plane>
+            
+            <!-- Dynamically placed models will appear here -->
+            ${generateModelEntities()}
           </a-scene>
         `
       }} />
@@ -145,6 +168,7 @@ const Testing = () => {
   const [arEnabled, setArEnabled] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const [isFrontCamera, setIsFrontCamera] = useState(false);
+  const [placedModels, setPlacedModels] = useState<PlacedModelData[]>([]);
   
   // Helper function to add debug information
   const addDebugInfo = (message: string) => {
@@ -252,6 +276,16 @@ const Testing = () => {
     addDebugInfo(`Camera switched to ${!isFrontCamera ? 'front' : 'back'}`);
   };
 
+  // Handler for placing 3D models
+  const handlePlaceModel = (modelData: PlacedModelData) => {
+    setPlacedModels(prev => [...prev, modelData]);
+    addDebugInfo(`Placed model at ${modelData.latitude.toFixed(6)}, ${modelData.longitude.toFixed(6)}`);
+    
+    // Here you would typically send this data to a server so other users can see it
+    // For now, we're just storing it locally
+    toast.success("Model placed! In a real application, this would be visible to other users nearby.");
+  };
+
   return (
     <div className="min-h-screen max-h-screen h-screen w-full overflow-hidden bg-transparent flex flex-col">
       {/* Camera background */}
@@ -311,7 +345,8 @@ const Testing = () => {
         
         {arEnabled && (
           <div className="w-full h-full">
-            <ARJSViewer />
+            <ARJSViewer placedModels={placedModels} />
+            {arEnabled && <ModelPlacement onPlaceModel={handlePlaceModel} />}
           </div>
         )}
       </div>
@@ -329,8 +364,8 @@ const Testing = () => {
       {/* Information text at bottom */}
       {arEnabled && (
         <div className="fixed bottom-16 left-0 w-full text-center text-white text-sm px-4 py-2 bg-black/70 z-10">
-          <p>AR.js allows you to create location-based AR experiences that run in web browsers without any app installation.</p>
-          <p className="mt-1">For best results, use this page outdoors where GPS signal is stronger.</p>
+          <p>This AR experience allows you to place 3D models at your current location for others to see.</p>
+          <p className="mt-1">Select a model from the panel below and position it in your environment.</p>
         </div>
       )}
     </div>
