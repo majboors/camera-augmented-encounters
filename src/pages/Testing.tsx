@@ -1,30 +1,79 @@
 
-import React, { Suspense, useState, useRef } from "react";
+import React, { Suspense, useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, useGLTF } from "@react-three/drei";
+import { OrbitControls, useGLTF, Html } from "@react-three/drei";
+import * as THREE from "three";
 
-// Simple 3D model component
+// Simple loading indicator
+function LoadingSpinner() {
+  return (
+    <Html center>
+      <div className="bg-black/80 text-white p-4 rounded-md text-center">
+        <div className="animate-spin inline-block w-6 h-6 border-2 border-white border-t-transparent rounded-full mb-2"></div>
+        <p>Loading model...</p>
+      </div>
+    </Html>
+  );
+}
+
+// Error display
+function ErrorDisplay({ message }: { message: string }) {
+  return (
+    <Html center>
+      <div className="bg-black/80 text-white p-4 rounded-md text-center max-w-[200px]">
+        <div className="text-red-500 text-xl mb-2">⚠️</div>
+        <p className="text-sm">{message}</p>
+      </div>
+    </Html>
+  );
+}
+
+// Simple 3D model component with better error handling
 function Model({ url }: { url: string }) {
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // Reset error state when URL changes
+    setError(null);
+  }, [url]);
+  
   try {
+    // Using try-catch inside a component can cause issues with React
+    // so we'll handle errors in a controlled way
     const { scene } = useGLTF(url);
+    
     return (
-      <primitive 
-        object={scene} 
-        scale={1} 
-        position={[0, 0, 0]}
-      />
+      <>
+        {error ? (
+          <ErrorDisplay message={error} />
+        ) : (
+          <primitive 
+            object={scene} 
+            scale={1} 
+            position={[0, 0, 0]}
+            onError={(e: any) => {
+              console.error("Model error:", e);
+              setError("Failed to render model");
+            }}
+          />
+        )}
+      </>
     );
-  } catch (error) {
-    console.error("Error loading model:", error);
+  } catch (err) {
+    console.error("Model load error:", err);
+    
+    // If we hit an error, show a fallback cube and an error message
     return (
-      <mesh>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshNormalMaterial />
-        <meshStandardMaterial color="hotpink" />
-      </mesh>
+      <>
+        <ErrorDisplay message="Error loading model. Try a different file." />
+        <mesh>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color="hotpink" />
+        </mesh>
+      </>
     );
   }
 }
@@ -34,14 +83,27 @@ function PlaceholderBox() {
   return (
     <mesh rotation={[0, Math.PI * 0.25, 0]}>
       <boxGeometry args={[1, 1, 1]} />
-      <meshNormalMaterial />
+      <meshStandardMaterial color="#ff88ee" />
     </mesh>
+  );
+}
+
+// A grid to help with orientation
+function Grid() {
+  return (
+    <gridHelper 
+      args={[10, 10, "#666666", "#444444"]} 
+      position={[0, -1, 0]} 
+      rotation={[0, 0, 0]}
+    />
   );
 }
 
 const Testing = () => {
   const [modelUrl, setModelUrl] = useState<string | null>(null);
   const [hasTestedWebGL, setHasTestedWebGL] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [canvasError, setCanvasError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Basic WebGL test function
@@ -87,9 +149,24 @@ const Testing = () => {
       return;
     }
 
-    const objectUrl = URL.createObjectURL(file);
-    setModelUrl(objectUrl);
-    toast.success(`Loading model: ${file.name}`);
+    setIsLoading(true);
+    setCanvasError(null);
+    
+    try {
+      // Revoke previous URL if it exists
+      if (modelUrl && modelUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(modelUrl);
+      }
+      
+      const objectUrl = URL.createObjectURL(file);
+      setModelUrl(objectUrl);
+      toast.success(`Loading model: ${file.name}`);
+    } catch (err) {
+      console.error("File handling error:", err);
+      toast.error("Failed to process the file");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Trigger file input click
@@ -99,9 +176,24 @@ const Testing = () => {
 
   // Handle upload of sample model
   const loadSampleModel = () => {
-    const sampleUrl = "https://replicate.delivery/yhqm/5xOmxKPXDTpnIdxRRvs91WKWHTYNGmdBjuE7DbBEigZf0WCKA/output.glb";
+    setIsLoading(true);
+    setCanvasError(null);
+    
+    // Using a small sample model that should load quickly
+    const sampleUrl = "https://market-assets.fra1.cdn.digitaloceanspaces.com/market-assets/models/suzanne-high-poly/model.gltf";
     setModelUrl(sampleUrl);
     toast.success("Loading sample model...");
+  };
+
+  // Reset everything
+  const resetView = () => {
+    if (modelUrl && modelUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(modelUrl);
+    }
+    
+    setModelUrl(null);
+    setCanvasError(null);
+    toast.info("View reset");
   };
 
   return (
@@ -140,14 +232,15 @@ const Testing = () => {
               <Button 
                 onClick={handleUploadClick}
                 className="w-full"
+                disabled={isLoading}
               >
-                Upload GLB File
+                {isLoading ? "Loading..." : "Upload GLB File"}
               </Button>
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileUpload}
-                accept=".glb"
+                accept=".glb,.gltf"
                 className="hidden"
               />
               
@@ -157,33 +250,70 @@ const Testing = () => {
                 onClick={loadSampleModel}
                 variant="secondary"
                 className="w-full"
+                disabled={isLoading}
               >
                 Load Sample Model
               </Button>
+              
+              {modelUrl && (
+                <Button 
+                  onClick={resetView}
+                  variant="destructive"
+                  className="w-full mt-2"
+                >
+                  Reset View
+                </Button>
+              )}
             </div>
           </div>
         )}
         
         {(hasTestedWebGL && modelUrl) && (
-          <div className="w-full h-[300px] bg-gray-900 rounded-lg overflow-hidden mb-6">
-            <Canvas
-              camera={{ position: [0, 0, 5], fov: 50 }}
-              style={{ background: '#222' }}
-            >
-              <ambientLight intensity={0.7} />
-              <directionalLight position={[5, 5, 5]} intensity={0.8} />
-              
-              <Suspense fallback={<PlaceholderBox />}>
-                {modelUrl && <Model url={modelUrl} />}
-              </Suspense>
-              
-              <OrbitControls />
-            </Canvas>
+          <div className="w-full h-[400px] bg-gray-900 rounded-lg overflow-hidden mb-6 relative">
+            {canvasError ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+                <div className="bg-red-900/50 p-4 rounded-md text-white max-w-[80%] text-center">
+                  <h3 className="text-lg font-bold mb-2">Rendering Error</h3>
+                  <p>{canvasError}</p>
+                </div>
+              </div>
+            ) : (
+              <Canvas
+                camera={{ position: [0, 0, 5], fov: 50 }}
+                style={{ background: '#222' }}
+                onCreated={({ gl }) => {
+                  console.log("Canvas created");
+                  gl.setClearColor(new THREE.Color('#222222'));
+                }}
+                onError={(error) => {
+                  console.error("Canvas error:", error);
+                  setCanvasError("Failed to initialize 3D canvas. Try a different browser.");
+                }}
+              >
+                <ambientLight intensity={0.7} />
+                <directionalLight position={[5, 5, 5]} intensity={0.8} />
+                <Grid />
+                
+                <Suspense fallback={<>
+                  <LoadingSpinner />
+                  <PlaceholderBox />
+                </>}>
+                  {modelUrl && <Model url={modelUrl} />}
+                </Suspense>
+                
+                <OrbitControls 
+                  makeDefault 
+                  enableDamping={false}
+                  enableZoom={true}
+                />
+              </Canvas>
+            )}
           </div>
         )}
         
-        <div className="text-center text-gray-400 text-sm">
-          <p>This testing page helps determine if your device can support the AR experience.</p>
+        <div className="text-center text-gray-400 text-sm max-w-md">
+          <p className="mb-2">This testing page helps determine if your device can support the AR experience.</p>
+          <p>If you're having trouble, try a different browser like Chrome or Firefox, or a different device.</p>
         </div>
       </div>
     </div>
