@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Camera } from "@/components/Camera";
 
 // Basic AR.js viewer component that uses string literals to render HTML
 const ARJSViewer = () => {
@@ -64,15 +65,16 @@ const ARJSViewer = () => {
             embedded
             vr-mode-ui="enabled: false"
             loading-screen="enabled: false"
-            renderer="antialias: true; alpha: true; precision: mediump; logarithmicDepthBuffer: true"
+            renderer="antialias: true; alpha: true; precision: mediump; logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true; physicallyCorrectLights: true;"
             arjs="sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: false;"
+            style="z-index: 1;"
           >
             <a-camera gps-camera rotation-reader look-controls-enabled="false"></a-camera>
             
             <!-- For testing purposes, we'll add a static box that should always appear in AR -->
             <a-box
               id="redBox"
-              material="color: red"
+              material="color: red; transparent: true; opacity: 0.8"
               scale="0.5 0.5 0.5"
               position="0 0 -3"
               animation="property: rotation; to: 0 360 0; loop: true; dur: 5000; easing: linear"
@@ -82,7 +84,7 @@ const ARJSViewer = () => {
             <!-- This entity will be dynamically positioned based on user's location -->
             <a-sphere
               id="yellowSphere"
-              material="color: yellow"
+              material="color: yellow; transparent: true; opacity: 0.9"
               radius="0.5"
               position="1 0 -3"
               animation="property: position; to: 1 1 -3; loop: true; dir: alternate; dur: 2000"
@@ -95,6 +97,8 @@ const ARJSViewer = () => {
               width="4"
               height="4"
               color="#7BC8A4"
+              transparent="true"
+              opacity="0.7"
             ></a-plane>
           </a-scene>
         `
@@ -140,6 +144,7 @@ const Testing = () => {
   const [hasTestedWebGL, setHasTestedWebGL] = useState(false);
   const [arEnabled, setArEnabled] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
+  const [isFrontCamera, setIsFrontCamera] = useState(false);
   
   // Helper function to add debug information
   const addDebugInfo = (message: string) => {
@@ -241,17 +246,35 @@ const Testing = () => {
     }
   };
 
+  // Toggle camera function
+  const toggleCamera = () => {
+    setIsFrontCamera(!isFrontCamera);
+    addDebugInfo(`Camera switched to ${!isFrontCamera ? 'front' : 'back'}`);
+  };
+
   return (
-    <div className="min-h-screen max-h-screen h-screen w-full overflow-hidden bg-black flex flex-col">
+    <div className="min-h-screen max-h-screen h-screen w-full overflow-hidden bg-transparent flex flex-col">
+      {/* Camera background */}
+      {arEnabled && <Camera isFrontCamera={isFrontCamera} />}
+      
       <div className="absolute top-4 left-4 z-10 flex gap-2">
         <Link to="/">
-          <Button variant="outline">Back to Home</Button>
+          <Button variant="outline" className="bg-black/50 text-white border-white/50 hover:bg-black/80">Back to Home</Button>
         </Link>
+        {arEnabled && (
+          <Button 
+            variant="outline" 
+            className="bg-black/50 text-white border-white/50 hover:bg-black/80"
+            onClick={toggleCamera}
+          >
+            Switch Camera
+          </Button>
+        )}
       </div>
       
       <div className="flex flex-col items-center justify-center flex-grow w-full h-full">
         {!arEnabled && (
-          <div className="text-white p-6 text-center max-w-md">
+          <div className="text-white p-6 text-center max-w-md bg-black/80 rounded-lg">
             <h1 className="text-3xl font-bold mb-6">Location-Based AR Testing</h1>
             
             <div className="bg-gray-800 p-6 rounded-lg w-full mb-6">

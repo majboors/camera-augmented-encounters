@@ -29,7 +29,10 @@ export const Camera = ({ isFrontCamera }: CameraProps) => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.onloadedmetadata = () => {
-            videoRef.current?.play().catch(console.error);
+            videoRef.current?.play().catch(error => {
+              console.error("Error playing video:", error);
+              toast.error("Failed to start camera feed");
+            });
           };
         }
       } catch (error) {

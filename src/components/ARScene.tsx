@@ -73,17 +73,18 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
         zIndex: 2,
         pointerEvents: "auto",
         touchAction: "none",
+        background: "transparent", // Ensure the container has a transparent background
       }}
     >
       <Canvas
         shadows
         gl={{ 
-          alpha: true,
+          alpha: true, // Required for transparent background
           antialias: true,
-          powerPreference: "default", // Changed from high-performance for better compatibility
+          powerPreference: "default",
           depth: true,
-          stencil: false,  // Disabled stencil buffer for better performance
-          preserveDrawingBuffer: false, // Disabled for better performance
+          stencil: false,
+          preserveDrawingBuffer: false,
         }}
         style={{ 
           background: 'transparent',
@@ -95,9 +96,9 @@ export function ARScene({ modelUrl, scale, position }: ARSceneProps) {
         }}
         onCreated={({ gl, scene }) => {
           console.log("Canvas created successfully");
-          gl.setClearColor(0x000000, 0);
+          gl.setClearColor(0x000000, 0); // Set clear color with 0 alpha (transparent)
           gl.setPixelRatio(window.devicePixelRatio);
-          scene.background = null;
+          scene.background = null; // Ensure scene background is null for transparency
         }}
         onError={(error) => {
           console.error('Canvas error:', error);
