@@ -18,11 +18,12 @@ const ThreeJSViewer = ({ modelUrl }: { modelUrl: string }) => {
     setIsLoading(true);
     setError(null);
     
-    let scene: THREE.Scene;
-    let camera: THREE.PerspectiveCamera;
-    let renderer: THREE.WebGLRenderer;
+    // Declare scene variables
+    let scene: any;
+    let camera: any;
+    let renderer: any;
     let controls: any;
-    let mixer: THREE.AnimationMixer | null = null;
+    let mixer: any = null;
     let clock = new THREE.Clock();
     let animationFrameId: number;
     
@@ -62,7 +63,7 @@ const ThreeJSViewer = ({ modelUrl }: { modelUrl: string }) => {
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(width, height);
         renderer.shadowMap.enabled = true;
-        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
         
         // Clear container and append renderer
         if (containerRef.current) {
@@ -70,55 +71,73 @@ const ThreeJSViewer = ({ modelUrl }: { modelUrl: string }) => {
           containerRef.current.appendChild(renderer.domElement);
         }
         
-        // Load the model
-        const loader = new THREE.GLTFLoader();
+        // Import OrbitControls from Three.js examples
+        const OrbitControls = (window as any).THREE?.OrbitControls || 
+                             (THREE as any).OrbitControls;
+        
+        // Load the model using GLTFLoader
+        // First check if GLTFLoader is available
+        const GLTFLoader = (window as any).THREE?.GLTFLoader || 
+                          (THREE as any).GLTFLoader;
+        
+        if (!GLTFLoader) {
+          // If GLTFLoader is not available, we need to dynamically import it
+          console.error("GLTFLoader not found. Trying to use default import.");
+          setError("GLTFLoader not available. Please try a different browser.");
+          setIsLoading(false);
+          return;
+        }
+        
+        const loader = new GLTFLoader();
         
         // Load the model with a Promise wrapper for better error handling
         try {
-          const gltf = await new Promise<THREE.GLTF>((resolve, reject) => {
-            loader.load(
-              modelUrl,
-              (gltf) => resolve(gltf),
-              (xhr) => {
-                const progress = Math.floor((xhr.loaded / xhr.total) * 100);
-                console.log(`Loading model: ${progress}%`);
-              },
-              (error) => {
-                console.error('Error loading model:', error);
-                reject(error);
+          loader.load(
+            modelUrl,
+            (gltf: any) => {
+              // Add model to scene
+              const model = gltf.scene;
+              const scale = 1;
+              model.scale.set(scale, scale, scale);
+              model.position.set(0, 0, 0);
+              model.castShadow = true;
+              model.receiveShadow = true;
+              
+              // Handle animations if present
+              const animations = gltf.animations;
+              if (animations && animations.length) {
+                mixer = new THREE.AnimationMixer(model);
+                animations.forEach((animation: any) => {
+                  mixer?.clipAction(animation).play();
+                });
               }
-            );
-          });
-          
-          // Add model to scene
-          const model = gltf.scene;
-          const scale = 1;
-          model.scale.set(scale, scale, scale);
-          model.position.set(0, 0, 0);
-          model.castShadow = true;
-          model.receiveShadow = true;
-          
-          // Handle animations if present
-          const animations = gltf.animations;
-          if (animations && animations.length) {
-            mixer = new THREE.AnimationMixer(model);
-            animations.forEach(animation => {
-              mixer?.clipAction(animation).play();
-            });
-          }
-          
-          scene.add(model);
-          setIsLoading(false);
-          
-          // Add orbit controls
-          controls = new THREE.OrbitControls(camera, renderer.domElement);
-          controls.enableDamping = false;
-          controls.dampingFactor = 0.05;
-          controls.screenSpacePanning = false;
-          controls.minDistance = 1;
-          controls.maxDistance = 50;
-          controls.maxPolarAngle = Math.PI / 2;
-          
+              
+              scene.add(model);
+              setIsLoading(false);
+              
+              // Add orbit controls
+              if (OrbitControls) {
+                controls = new OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = false;
+                controls.dampingFactor = 0.05;
+                controls.screenSpacePanning = false;
+                controls.minDistance = 1;
+                controls.maxDistance = 50;
+                controls.maxPolarAngle = Math.PI / 2;
+              } else {
+                console.warn("OrbitControls not available");
+              }
+            },
+            (xhr: any) => {
+              const progress = Math.floor((xhr.loaded / xhr.total) * 100);
+              console.log(`Loading model: ${progress}%`);
+            },
+            (error: any) => {
+              console.error('Error loading model:', error);
+              setError("Failed to load 3D model. Please try a different file.");
+              setIsLoading(false);
+            }
+          );
         } catch (err) {
           console.error("Failed to load model:", err);
           setError("Failed to load 3D model. Please try a different file.");
@@ -377,25 +396,13 @@ const Testing = () => {
   );
 };
 
-// We need to patch in the missing GLTFLoader type
-declare namespace THREE {
-  class GLTFLoader {
-    constructor();
-    setCrossOrigin(value: string): void;
-    load(
-      url: string,
-      onLoad: (gltf: GLTF) => void,
-      onProgress?: (event: ProgressEvent) => void,
-      onError?: (event: ErrorEvent) => void
-    ): void;
-  }
-  
-  interface GLTF {
-    animations: THREE.AnimationClip[];
-    scene: THREE.Scene;
-    scenes: THREE.Scene[];
-    cameras: THREE.Camera[];
-    asset: object;
+// Add declaration to let TypeScript know OrbitControls and GLTFLoader can be added to THREE
+declare global {
+  interface Window {
+    THREE: typeof THREE & {
+      OrbitControls?: any;
+      GLTFLoader?: any;
+    };
   }
 }
 
