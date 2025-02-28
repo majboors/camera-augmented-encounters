@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-// Basic AR.js viewer component
+// Basic AR.js viewer component that uses string literals to render HTML
 const ARJSViewer = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,31 +30,33 @@ const ARJSViewer = () => {
   
   return (
     <div ref={containerRef} className="w-full h-full relative">
-      {/* AR.js scene will be inserted here */}
-      <div className="absolute inset-0">
-        <a-scene
-          embedded
-          vr-mode-ui="enabled: false"
-          arjs="sourceType: webcam; debugUIEnabled: false;"
-        >
-          <a-camera gps-camera rotation-reader></a-camera>
-          
-          {/* For testing purposes, we'll add a static box that should appear in AR */}
-          <a-box
-            material="color: red"
-            scale="1 1 1"
-            position="0 1 -5"
-            gps-entity-place="latitude: 0; longitude: 0;"
-          ></a-box>
-          
-          {/* This entity will be dynamically positioned based on user's location */}
-          <a-sphere
-            material="color: yellow"
-            scale="1 1 1"
-            gps-entity-place="latitude: 0; longitude: 0;"
-          ></a-sphere>
-        </a-scene>
-      </div>
+      {/* Since we're using custom A-Frame elements, we'll render them as-is using dangerouslySetInnerHTML */}
+      <div className="absolute inset-0" dangerouslySetInnerHTML={{
+        __html: `
+          <a-scene 
+            embedded
+            vr-mode-ui="enabled: false"
+            arjs="sourceType: webcam; debugUIEnabled: false;"
+          >
+            <a-camera gps-camera rotation-reader></a-camera>
+            
+            <!-- For testing purposes, we'll add a static box that should appear in AR -->
+            <a-box
+              material="color: red"
+              scale="1 1 1"
+              position="0 1 -5"
+              gps-entity-place="latitude: 0; longitude: 0;"
+            ></a-box>
+            
+            <!-- This entity will be dynamically positioned based on user's location -->
+            <a-sphere
+              material="color: yellow"
+              scale="1 1 1"
+              gps-entity-place="latitude: 0; longitude: 0;"
+            ></a-sphere>
+          </a-scene>
+        `
+      }} />
       
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
@@ -135,13 +137,19 @@ const Testing = () => {
       };
       
       // Load required scripts
-      await Promise.all([
-        addScript('https://aframe.io/releases/1.3.0/aframe.min.js'),
-        addScript('https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js')
-      ]);
-      
-      setArEnabled(true);
-      toast.success("AR.js initialized successfully!");
+      try {
+        await Promise.all([
+          addScript('https://aframe.io/releases/1.3.0/aframe.min.js'),
+          addScript('https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js')
+        ]);
+        
+        setArEnabled(true);
+        toast.success("AR.js initialized successfully!");
+      } catch (scriptError) {
+        console.error("Error loading AR scripts:", scriptError);
+        toast.error("Failed to load AR.js scripts. Please check your internet connection.");
+        throw new Error("Failed to load AR.js scripts");
+      }
     } catch (error) {
       console.error("Error enabling AR:", error);
       toast.error("Failed to enable AR. Please ensure location permissions are granted.");
